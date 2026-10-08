@@ -45,8 +45,7 @@ char* get_input(int seconds)
 						
 	printf("\033[33mTime remaining: %d seconds\033[0m\n", seconds);
 	fflush(stdout);
-
-	read(STDIN_FILENO, &c, 1); //wait exactly for one key
+	do { read(STDIN_FILENO, &c, 1); } while (c == '\n' || c == '\r');
 	buffer[i++] = c;
 	putchar(c);
 	fflush(stdout);
@@ -77,6 +76,7 @@ char* get_input(int seconds)
 		if (select(STDIN_FILENO + 1, &input, NULL, NULL, &timeout) > 0)
 		{
 			read(STDIN_FILENO, &c, 1);
+			if (c == '\n' || c == '\r') continue;
 			if (c == '\b' || c == 127) //delete or backspace
 			{
 				if(i > 0)
