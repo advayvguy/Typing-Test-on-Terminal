@@ -91,6 +91,7 @@ void calculate_result(int time,
     double accuracy = 0;
 
     correct_chars += input_count - 1;
+    total_chars += input_count - 1;
     if (total_chars > 0)
         accuracy = (double)correct_chars / total_chars * 100;
 
