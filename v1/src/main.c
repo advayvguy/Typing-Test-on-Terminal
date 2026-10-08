@@ -61,47 +61,48 @@ void calculate_result(int time,
         char** wordlist,
         int word_count)
 {
-    int correct_chars = 0;
-    int total_chars = 0;
+    	int correct_chars = 0;
+    	int total_chars = 0;
 
-    if (input_count > word_count)
-        input_count = word_count;
+    	if (input_count > word_count)
+        	input_count = word_count;
 
-    for (int i = 0; i < input_count; i++)
-    {
-        int input_len = strlen(inputlist[i]);
-        int word_len = strlen(wordlist[i]);
+    	for (int i = 0; i < input_count; i++)
+    	{
+        	int input_len = strlen(inputlist[i]);
+        	int word_len = strlen(wordlist[i]);
 
-        total_chars += input_len;
+        	total_chars += input_len;
 
-        int compare_len = input_len;
+        	int compare_len = input_len;
 
-        if (compare_len > word_len)
-            compare_len = word_len;
+        	if (compare_len > word_len)
+            	compare_len = word_len;
 
-        for (int j = 0; j < compare_len; j++)
-        {
-            if (inputlist[i][j] == wordlist[i][j])
-                correct_chars++;
-        }
-    }
+        	for (int j = 0; j < compare_len; j++)
+        	{
+            	if (inputlist[i][j] == wordlist[i][j])
+                	correct_chars++;
+        	}
+    	}
 
-    double mins = time / 60.0;
+    	double mins = time / 60.0;
 
-    double accuracy = 0;
+    	double accuracy = 0;
 
-    correct_chars += input_count - 1;
-    total_chars += input_count - 1;
-    if (total_chars > 0)
-        accuracy = (double)correct_chars / total_chars * 100;
+    	correct_chars += input_count - 1;
+    	total_chars += input_count - 1;
+    	if (total_chars > 0)
+        	accuracy = (double)correct_chars / total_chars * 100;
 
-    double wpm = (correct_chars / 5.0) / mins;
+    	double wpm = (correct_chars / 5.0) / mins;
 
-    printf("\n--------------------------------------------------\n");
+    	printf("\n--------------------------------------------------\n");
 	printf(CYAN "time:               " RESET "%d seconds\n", time);
 	printf(CYAN "correct characters: " RESET "%d\n", correct_chars);
 	printf(CYAN "accuracy:           " RESET "%.2f%%\n", accuracy);
 	printf(CYAN "WPM:                " RESET "%.2f\n", wpm);
+    	printf("--------------------------------------------------\n");
 }
 
 int main()
