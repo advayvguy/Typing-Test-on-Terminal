@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 199309L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +26,17 @@ typedef struct
 static void move_cursor(int row, int col)
 {
     printf("\033[%d;%dH", row + 1, col + 1);
+}
+
+
+static double elapsed_seconds(struct timespec start)
+{
+    struct timespec now;
+
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    return (now.tv_sec - start.tv_sec) +
+           (now.tv_nsec - start.tv_nsec) / 1000000000.0;
 }
 
 
@@ -140,40 +153,37 @@ char *get_input(const char *target, int seconds)
     printf(CLEAR_SCREEN HIDE_CURSOR);
 
     /* Print target text */
-    for (int i = 0; i < len; i++)
+    for (int j = 0; j < len; j++)
     {
-        if (target[i] == '\n')
+        if (target[j] == '\n')
             continue;
 
-        move_cursor(positions[i].row, positions[i].col);
-        putchar(target[i]);
+        move_cursor(positions[j].row, positions[j].col);
+        putchar(target[j]);
     }
 
     fflush(stdout);
 
     int i = 0;
-    time_t start = time(NULL);
+    int timer_started = 0;
+    struct timespec start = {0};
 
     while (i < len)
     {
-        if (difftime(time(NULL), start) >= seconds)
+        /* Check timeout after the first keypress */
+        if (timer_started && elapsed_seconds(start) >= seconds)
             break;
 
-        move_cursor(
-            positions[i].row,
-            positions[i].col
-        );
-
+        move_cursor(positions[i].row, positions[i].col);
         fflush(stdout);
 
         fd_set set;
-
         FD_ZERO(&set);
         FD_SET(STDIN_FILENO, &set);
 
         struct timeval timeout = {
             .tv_sec = 0,
-            .tv_usec = 100000
+            .tv_usec = 10000
         };
 
         int ready = select(
@@ -195,6 +205,13 @@ char *get_input(const char *target, int seconds)
         if (read(STDIN_FILENO, &c, 1) != 1)
             continue;
 
+        /* Start the timer on the first keypress */
+        if (!timer_started)
+        {
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            timer_started = 1;
+        }
+
         /* Backspace */
         if (c == 127 || c == '\b')
         {
@@ -203,9 +220,7 @@ char *get_input(const char *target, int seconds)
 
             i--;
 
-            /*
-             * Don't land on a newline.
-             */
+            /* Skip backward over a newline */
             if (target[i] == '\n')
             {
                 if (i == 0)
@@ -216,13 +231,8 @@ char *get_input(const char *target, int seconds)
 
             buffer[i] = '\0';
 
-            move_cursor(
-                positions[i].row,
-                positions[i].col
-            );
-
+            move_cursor(positions[i].row, positions[i].col);
             printf(RESET "%c", target[i]);
-
             fflush(stdout);
 
             continue;
@@ -253,10 +263,7 @@ char *get_input(const char *target, int seconds)
 
         buffer[i] = c;
 
-        move_cursor(
-            positions[i].row,
-            positions[i].col
-        );
+        move_cursor(positions[i].row, positions[i].col);
 
         if (c == target[i])
             printf(GREEN "%c" RESET, target[i]);
@@ -268,11 +275,12 @@ char *get_input(const char *target, int seconds)
         fflush(stdout);
     }
 
-    /* Restore terminal */
+    /* Restore terminal settings */
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
     printf(SHOW_CURSOR);
     move_cursor(total_rows + 1, 0);
+    fflush(stdout);
 
     free(positions);
 
