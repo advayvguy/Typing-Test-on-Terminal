@@ -9,24 +9,6 @@
 
 static int input_len = 0;   // current number of typed characters
 
-void show_timer(double remaining)
-{
-    struct winsize ws;
-    int cols = 80;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
-        cols = ws.ws_col;
-
-    int extra_rows = (input_len > 0) ? (input_len - 1) / cols : 0;
-
-    printf("\0337");                          // save cursor
-    printf("\033[%dA\r", 1 + extra_rows);     // up to the timer line, column 0
-    printf("\033[33m");                       // yellow
-    printf("Time remaining:%2.0f seconds", ceil(remaining));
-    printf("\033[0m");                        // reset color
-    printf("\033[K");                         // clear rest of line
-    printf("\0338");                          // restore cursor
-    fflush(stdout);
-}
 
 char* get_input(int seconds)
 {
@@ -43,9 +25,7 @@ char* get_input(int seconds)
 	new.c_lflag &= ~ECHO; //we will print it ourselves
 	tcsetattr(STDIN_FILENO, TCSANOW, &new); //set new attributes
 						
-	printf("\033[33mTime remaining: %d seconds\033[0m\n", seconds);
-	fflush(stdout);
-	do { read(STDIN_FILENO, &c, 1); } while (c == '\n' || c == '\r');
+	read(STDIN_FILENO, &c, 1);
 	buffer[i++] = c;
 	putchar(c);
 	fflush(stdout);
@@ -63,7 +43,6 @@ char* get_input(int seconds)
 		double remaining = seconds - elapsed;
 		if (remaining < 0) remaining = 0;
 		input_len = i;
-		show_timer(remaining);
 		if (elapsed >= seconds)
 		{
 			break;
@@ -76,7 +55,6 @@ char* get_input(int seconds)
 		if (select(STDIN_FILENO + 1, &input, NULL, NULL, &timeout) > 0)
 		{
 			read(STDIN_FILENO, &c, 1);
-			if (c == '\n' || c == '\r') continue;
 			if (c == '\b' || c == 127) //delete or backspace
 			{
 				if(i > 0)
