@@ -273,7 +273,6 @@ char *get_input(const char *target, int seconds)
 
     printf(SHOW_CURSOR);
     move_cursor(total_rows + 1, 0);
-    printf("\n");
 
     free(positions);
 
