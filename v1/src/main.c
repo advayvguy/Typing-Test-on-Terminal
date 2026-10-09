@@ -8,8 +8,8 @@
 #define RESET "\033[0m"
 #define YELLOW "\033[1;33m"
 
-char** generate(int wordcount);
-char* get_input(int seconds);
+char* generate(int wordcount);
+char* get_input(char* wordlist, int seconds);
 
 char** split_words(char* input, int* count)
 {
@@ -91,7 +91,15 @@ void calculate_result(int time,
     	double accuracy = 0;
 
     	correct_chars += input_count - 1;
+	if (input_count == 0)
+	{
+		correct_chars = 0;
+	}
     	total_chars += input_count - 1;
+	if (input_count == 0)
+	{
+		total_chars = 0; 
+	}
     	if (total_chars > 0)
         	accuracy = (double)correct_chars / total_chars * 100;
 
@@ -104,30 +112,65 @@ void calculate_result(int time,
 	printf(CYAN "WPM:                " RESET "%.2f\n", wpm);
     	printf("--------------------------------------------------\n");
 }
-
 int main()
 {
-	int time;
+    int time_limit;
+    srand((unsigned int)time(NULL));
 
-	printf("\033[93m\033[3m");
-    	printf("___________             .__                 ___________              __   \n");
-    	printf("\\__    ___/__.__.______ |__| ____    ____   \\__    ___/___   _______/  |_ \n");
-    	printf("  |    | <   |  |\\____ \\|  |/    \\ / _ \__\\    |    |_/ __ \\ /  ___/\\   __\\\n");
-    	printf("  |    |  \\___  ||  |_> >  |   |  \\/ /_/  >   |    |\\  ___/ \\___ \\  |  |  \n");
-    	printf("  |____|  / ____||   __/|__|___|  /\\___  /    |____| \\___  >____  > |__|  \n");
-    	printf("          \\/     |__|           \\//_____/                \\/     \\/        \n");
-    	printf("\033[0m\n");
+    printf("\033[93m\033[3m");
+    printf("___________             .__                 ___________              __   \n");
+    printf("\\__    ___/__.__.______ |__| ____    ____   \\__    ___/___   _______/  |_ \n");
+    printf("  |    | <   |  |\\____ \\|  |/    \\ / _\\__\\    |    |_/ __ \\ /  ___/\\   __\\\n");
+    printf("  |    |  \\___  ||  |_> >  |   |  \\/ /_/  >   |    |\\  ___/ \\___ \\  |  |  \n");
+    printf("  |____|  / ____||   __/|__|___|  /\\___  /    |____| \\___  >____  > |__|  \n");
+    printf("          \\/     |__|           \\//_____/                \\/     \\/        \n");
+    printf("\033[0m\n");
 
-	printf("Enter time limit (seconds): ");
-	scanf("%d", &time);
+    printf("Enter time limit (seconds): ");
 
-	char** wordlist = generate(6*time);
-	char *input = get_input(time);
+    if (scanf("%d", &time_limit) != 1 || time_limit <= 0)
+    {
+        fprintf(stderr, "Invalid time limit.\n");
+        return 1;
+    }
 
-	int words = 0;
+    char *wordlist = generate(6 * time_limit);
+    if (wordlist == NULL)
+    {
+        fprintf(stderr, "Failed to generate text.\n");
+        return 1;
+    }
 
-	char** inputlist = split_words(input, &words);
+    char *input = get_input(wordlist, time_limit);
+    if (input == NULL)
+    {
+        fprintf(stderr, "Failed to get input.\n");
+        free(wordlist);
+        return 1;
+    }
 
-	calculate_result(time, inputlist, words, wordlist, 6*time);
-	free(input);
+    int words = 0;
+    int total_words = 0;
+
+    char **inputlist = split_words(input, &words);
+    char **words_list = split_words(wordlist, &total_words);
+
+    if (inputlist == NULL || words_list == NULL)
+    {
+        fprintf(stderr, "Failed to split text into words.\n");
+        free(inputlist);
+        free(words_list);
+        free(input);
+        free(wordlist);
+        return 1;
+    }
+
+    calculate_result(time_limit, inputlist, words, words_list, total_words);
+
+    free(inputlist);
+    free(words_list);
+    free(input);
+    free(wordlist);
+
+    return 0;
 }
